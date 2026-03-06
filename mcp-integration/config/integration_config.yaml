@@ -1,0 +1,628 @@
+# SecurityAgents Enterprise MCP Integration Configuration
+# P0 Deliverable for Phase 2B Enterprise Workflow Integration
+# Author: Tiger Team Alpha-2 Integration Specialist
+
+# Gateway Configuration
+gateway:
+  name: "SecurityAgents Enterprise MCP Gateway"
+  version: "1.0.0"
+  aws_region: "us-west-2"
+  environment: "production"
+  
+  # Event Processing
+  event_processing:
+    workers: 5
+    queue_size: 1000
+    batch_size: 10
+    processing_timeout_seconds: 300
+  
+  # Health Monitoring
+  health_monitoring:
+    interval_minutes: 5
+    cloudwatch_metrics: true
+    sns_alerting: true
+    unhealthy_threshold_minutes: 10
+
+# Platform Integrations
+platforms:
+  
+  # CrowdStrike Falcon MCP Integration
+  crowdstrike:
+    enabled: true
+    server_name: "crowdstrike_falcon"
+    server_url: "https://api.crowdstrike.com/mcp"
+    auth_type: "oauth2"
+    
+    # Rate Limiting (CrowdStrike API limits)
+    rate_limits:
+      requests_per_minute: 30
+      requests_per_hour: 1000
+      burst_limit: 5
+    
+    # Circuit Breaker Configuration
+    circuit_breaker:
+      failure_threshold: 3
+      recovery_timeout_seconds: 120
+      success_threshold: 3
+    
+    # Timeouts
+    timeouts:
+      request_timeout_seconds: 45
+      connection_timeout_seconds: 15
+    
+    # Authentication
+    authentication:
+      oauth2:
+        token_url: "https://api.crowdstrike.com/oauth2/token"
+        scope: "falcon-intel:read falcon-devices:read falcon-detections:read falcon-rtr:write"
+        grant_type: "client_credentials"
+      parameter_store_path: "/secops/crowdstrike"
+    
+    # Module Configuration
+    modules:
+      - device_control
+      - incident_management
+      - threat_intelligence
+      - detection_engine
+      - falcon_x
+      - real_time_response
+      - spotlight
+      - falcon_intelligence
+      - kubernetes_protection
+      - cloud_security
+      - identity_protection
+      - data_protection
+      - falcon_logscale
+    
+    # FQL Query Configuration
+    fql_queries:
+      default_time_range: "24h"
+      max_results: 1000
+      timeout_seconds: 30
+
+  # AWS Security Services MCP Integration
+  aws:
+    enabled: true
+    multi_region: true
+    regions:
+      - "us-west-2"
+      - "us-east-1"
+      - "eu-west-1"
+    
+    # Service Configurations
+    services:
+      security_hub:
+        enabled: true
+        server_name: "aws_security_hub"
+        server_url: "mcp://aws-security-hub"
+        auth_type: "iam"
+        
+        # Security Hub specific settings
+        findings_max_age_days: 30
+        severity_filter: ["CRITICAL", "HIGH", "MEDIUM"]
+        compliance_frameworks:
+          - "NIST_CSF_2.0"
+          - "CIS_AWS_Foundations"
+          - "SOX"
+          - "PCI_DSS"
+      
+      cloudtrail:
+        enabled: true
+        server_name: "aws_cloudtrail"
+        server_url: "mcp://aws-cloudtrail"
+        auth_type: "iam"
+        
+        # CloudTrail analysis settings
+        analysis_window_hours: 24
+        privilege_escalation_detection: true
+        anomaly_detection: true
+        threat_indicators_enabled: true
+        
+        # Monitored API calls
+        privileged_api_calls:
+          - "CreateUser"
+          - "CreateRole"
+          - "AttachUserPolicy"
+          - "AttachRolePolicy"
+          - "CreateAccessKey"
+          - "DeleteRole"
+          - "DeleteUser"
+          - "PutUserPolicy"
+        
+        infrastructure_changes:
+          - "CreateVpc"
+          - "DeleteVpc"
+          - "CreateSecurityGroup"
+          - "AuthorizeSecurityGroupIngress"
+          - "CreateInstance"
+          - "TerminateInstances"
+          - "ModifyInstanceAttribute"
+      
+      config:
+        enabled: true
+        server_name: "aws_config"
+        server_url: "mcp://aws-config"
+        auth_type: "iam"
+        
+        # Config compliance settings
+        compliance_frameworks:
+          - "NIST_CSF_2.0"
+          - "CIS_AWS_Foundations"
+          - "SOX"
+          - "PCI_DSS"
+        auto_remediation: false
+        compliance_threshold_percentage: 80
+      
+      guardduty:
+        enabled: true
+        server_name: "aws_guardduty"
+        server_url: "mcp://aws-guardduty"
+        auth_type: "iam"
+        
+        # GuardDuty settings
+        threat_intelligence_feeds: true
+        malware_protection: true
+        kubernetes_protection: true
+    
+    # Rate Limiting (AWS API limits)
+    rate_limits:
+      requests_per_minute: 100
+      requests_per_hour: 5000
+      burst_limit: 20
+
+  # GitHub Security MCP Integration
+  github:
+    enabled: true
+    server_name: "github_security"
+    server_url: "mcp://github-security"
+    auth_type: "api_key"
+    enterprise_url: null  # Set for GitHub Enterprise Server
+    
+    # Rate Limiting (GitHub API limits)
+    rate_limits:
+      requests_per_minute: 5000
+      requests_per_hour: 50000
+      burst_limit: 100
+    
+    # Authentication
+    authentication:
+      parameter_store_path: "/secops/github"
+      token_permissions:
+        - "repo"
+        - "security_events"
+        - "read:org"
+        - "read:repo_hook"
+    
+    # DevSecOps Configuration
+    devsecops:
+      # SAST Configuration
+      sast:
+        enabled: true
+        default_tools:
+          - "codeql"
+          - "semgrep"
+        language_specific_tools:
+          javascript: ["eslint-security", "semgrep"]
+          python: ["bandit", "semgrep"]
+          java: ["spotbugs", "semgrep"]
+          go: ["gosec", "semgrep"]
+        custom_rules: true
+        baseline_scanning: true
+      
+      # DAST Configuration
+      dast:
+        enabled: true
+        default_tools:
+          - "zap"
+          - "nuclei"
+        authentication_testing: true
+        api_testing: true
+        staging_environment_testing: true
+      
+      # SCA (Software Composition Analysis)
+      sca:
+        enabled: true
+        default_tools:
+          - "dependabot"
+          - "snyk"
+        package_managers:
+          - "npm"
+          - "pip"
+          - "maven"
+          - "gradle"
+          - "composer"
+          - "go"
+          - "nuget"
+        license_compliance: true
+        auto_updates: true
+      
+      # Security Gates
+      security_gates:
+        block_on_critical: true
+        block_on_high: true
+        allow_security_exceptions: false
+        require_security_review: true
+        exception_approval_required: true
+    
+    # Secret Scanning Configuration
+    secret_scanning:
+      enabled: true
+      push_protection: true
+      custom_patterns: true
+      auto_revocation: false  # Manual review recommended
+      notification_channels:
+        - "slack"
+        - "email"
+      
+      # Excluded paths
+      exclude_paths:
+        - ".git"
+        - "node_modules"
+        - "vendor"
+        - ".env.example"
+        - "test/fixtures"
+    
+    # Compliance Frameworks
+    compliance_frameworks:
+      - "owasp_top10"
+      - "nist_csf"
+      - "cwe"
+      - "sans_top25"
+      - "pci_dss"
+
+# Orchestration Configuration
+orchestration:
+  
+  # Default Workflows
+  workflows:
+    threat_investigation:
+      enabled: true
+      strategy: "parallel"
+      timeout_minutes: 30
+      retry_policy:
+        max_retries: 3
+        backoff_multiplier: 2
+        initial_delay_seconds: 5
+      
+      # Trigger Conditions
+      trigger_conditions:
+        - event_type: "threat_detection"
+          min_severity: "high"
+        - event_type: "incident_escalation"
+          min_severity: "medium"
+      
+      # Platform Operations
+      operations:
+        crowdstrike:
+          operation: "search_threat_indicators"
+          priority: "high"
+          timeout_minutes: 10
+        aws:
+          operation: "analyze_cloudtrail_events"
+          priority: "high"
+          timeout_minutes: 15
+        github:
+          operation: "scan_repository_security"
+          priority: "medium"
+          timeout_minutes: 20
+    
+    vulnerability_response:
+      enabled: true
+      strategy: "sequential"
+      timeout_minutes: 45
+      
+      # Dependencies
+      dependencies:
+        aws_assessment: ["github_monitoring"]
+        crowdstrike_check: ["aws_assessment"]
+      
+      # Operations
+      operations:
+        github:
+          operation: "monitor_dependency_vulnerabilities"
+          priority: "high"
+          auto_remediation: true
+        aws:
+          operation: "assess_config_compliance"
+          priority: "medium"
+          include_remediation: true
+        crowdstrike:
+          operation: "get_vulnerability_data"
+          priority: "low"
+          exploitable_only: true
+    
+    compliance_audit:
+      enabled: true
+      strategy: "parallel"
+      timeout_minutes: 60
+      
+      # Trigger Conditions
+      trigger_conditions:
+        - event_type: "compliance_violation"
+        - scheduled: "daily"
+          time: "02:00"
+      
+      # Operations
+      operations:
+        aws:
+          operation: "assess_config_compliance"
+          priority: "high"
+          frameworks: ["NIST_CSF_2.0", "CIS_AWS_Foundations"]
+        github:
+          operation: "generate_compliance_report"
+          priority: "high"
+          scope: "organization"
+        crowdstrike:
+          operation: "get_cloud_security_findings"
+          priority: "medium"
+          cloud_provider: "aws"
+  
+  # Event Correlation
+  event_correlation:
+    enabled: true
+    time_window_minutes: 15
+    min_correlated_events: 2
+    
+    # Correlation Rules
+    correlation_rules:
+      temporal_correlation:
+        time_window_minutes: 5
+        min_events: 2
+        correlation_fields:
+          - "source_ip"
+          - "user_identity"
+          - "resource_id"
+      
+      threat_indicator_correlation:
+        correlation_fields:
+          - "file_hash"
+          - "domain"
+          - "ip_address"
+        min_platforms: 2
+      
+      user_behavior_correlation:
+        correlation_fields:
+          - "user_identity"
+          - "source_ip"
+        time_window_minutes: 15
+        behavior_patterns:
+          - "privilege_escalation"
+          - "lateral_movement"
+
+# Security Configuration
+security:
+  
+  # Authentication & Authorization
+  authentication:
+    # AWS Parameter Store for secrets
+    aws_parameter_store:
+      enabled: true
+      encryption: true
+      key_rotation_days: 90
+    
+    # OAuth2 Configuration
+    oauth2:
+      token_refresh_threshold_minutes: 5
+      automatic_token_rotation: true
+    
+    # API Key Management
+    api_keys:
+      rotation_days: 30
+      audit_logging: true
+  
+  # Audit Logging
+  audit_logging:
+    enabled: true
+    destinations:
+      - "cloudwatch"
+      - "s3"
+    
+    # Log Configuration
+    log_level: "INFO"
+    include_sensitive_data: false
+    correlation_id_tracking: true
+    
+    # Retention
+    retention_days: 365
+    archival_enabled: true
+
+  # Encryption
+  encryption:
+    in_transit: true
+    at_rest: true
+    key_management: "aws_kms"
+    key_rotation_days: 90
+
+# Monitoring & Observability
+monitoring:
+  
+  # CloudWatch Integration
+  cloudwatch:
+    enabled: true
+    region: "us-west-2"
+    namespace: "SecurityAgents/MCP"
+    
+    # Metrics
+    metrics:
+      - "EventsProcessed"
+      - "WorkflowExecutions"
+      - "PlatformHealth"
+      - "ResponseTime"
+      - "ErrorRate"
+    
+    # Alarms
+    alarms:
+      high_error_rate:
+        threshold: 5.0  # percentage
+        evaluation_periods: 2
+        datapoints_to_alarm: 2
+      
+      platform_unhealthy:
+        threshold: 1  # any platform unhealthy
+        evaluation_periods: 1
+      
+      high_response_time:
+        threshold: 30.0  # seconds
+        evaluation_periods: 3
+  
+  # SNS Alerting
+  sns_alerting:
+    enabled: true
+    critical_topic_arn: "arn:aws:sns:us-west-2:ACCOUNT:secops-critical"
+    high_topic_arn: "arn:aws:sns:us-west-2:ACCOUNT:secops-high"
+    info_topic_arn: "arn:aws:sns:us-west-2:ACCOUNT:secops-info"
+
+  # Distributed Tracing
+  distributed_tracing:
+    enabled: true
+    provider: "aws_xray"
+    sample_rate: 0.1  # 10% sampling
+    
+  # Health Checks
+  health_checks:
+    endpoint: "/health"
+    interval_seconds: 30
+    timeout_seconds: 10
+    failure_threshold: 3
+
+# Performance Configuration
+performance:
+  
+  # Concurrency
+  max_concurrent_workflows: 20
+  max_concurrent_platform_calls: 50
+  
+  # Caching
+  caching:
+    enabled: true
+    provider: "redis"
+    ttl_seconds: 300
+    
+    # Cache keys
+    cache_platform_responses: true
+    cache_threat_intelligence: true
+    cache_compliance_data: false  # Always fresh for compliance
+  
+  # Resource Limits
+  resource_limits:
+    memory_limit_mb: 4096
+    cpu_limit_cores: 4
+    disk_space_limit_gb: 100
+
+# Quality Gates & Success Criteria
+quality_gates:
+  
+  # Performance Gates
+  performance:
+    max_response_time_seconds: 5
+    min_throughput_events_per_hour: 1000
+    max_error_rate_percentage: 1.0
+  
+  # Reliability Gates
+  reliability:
+    min_uptime_percentage: 99.9
+    max_circuit_breaker_trips_per_hour: 5
+    min_successful_workflows_percentage: 95.0
+  
+  # Security Gates
+  security:
+    all_secrets_in_parameter_store: true
+    encryption_enabled: true
+    audit_logging_enabled: true
+    mfa_required: true
+
+# Development & Testing
+development:
+  
+  # Test Configuration
+  testing:
+    unit_tests: true
+    integration_tests: true
+    load_testing: true
+    chaos_engineering: false  # Enable for resilience testing
+  
+  # Mock Services
+  mock_services:
+    enabled: false  # Enable for development/testing
+    mock_crowdstrike: false
+    mock_aws: false
+    mock_github: false
+  
+  # Debug Settings
+  debug:
+    log_level: "DEBUG"
+    verbose_logging: false
+    request_response_logging: false  # Enable for troubleshooting
+
+# Deployment Configuration
+deployment:
+  
+  # Environment
+  environment: "production"  # development, staging, production
+  deployment_region: "us-west-2"
+  
+  # Infrastructure
+  infrastructure:
+    platform: "aws"
+    container_platform: "ecs"  # ecs, kubernetes
+    auto_scaling: true
+    
+    # Scaling Configuration
+    min_instances: 2
+    max_instances: 10
+    target_cpu_utilization: 70
+    scale_out_cooldown_seconds: 300
+    scale_in_cooldown_seconds: 600
+  
+  # Blue/Green Deployment
+  blue_green:
+    enabled: true
+    traffic_split_percentage: 10  # Initial traffic to new version
+    promotion_delay_minutes: 15
+    automatic_rollback: true
+    rollback_threshold_error_rate: 5.0
+
+# Enterprise Features
+enterprise:
+  
+  # Multi-Tenancy (future)
+  multi_tenancy:
+    enabled: false
+    isolation_level: "namespace"  # namespace, vpc, account
+  
+  # Compliance Automation
+  compliance_automation:
+    enabled: true
+    automated_evidence_collection: true
+    continuous_compliance_monitoring: true
+    compliance_reporting: true
+    
+    # Supported Frameworks
+    frameworks:
+      - name: "NIST_CSF_2.0"
+        enabled: true
+        automation_level: "high"
+      - name: "CIS_Controls"
+        enabled: true
+        automation_level: "medium"
+      - name: "SOX"
+        enabled: true
+        automation_level: "low"
+      - name: "PCI_DSS"
+        enabled: false
+        automation_level: "manual"
+  
+  # Advanced Analytics
+  advanced_analytics:
+    enabled: true
+    machine_learning: true
+    predictive_analytics: true
+    behavioral_analysis: true
+    threat_hunting: true
+
+# Version Information
+version:
+  config_version: "1.0.0"
+  schema_version: "1.0"
+  last_updated: "2026-03-06T01:00:00Z"
+  updated_by: "Tiger Team Alpha-2"
