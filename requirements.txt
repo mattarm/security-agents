@@ -1,0 +1,45 @@
+# SecurityAgents Platform - Core Dependencies
+# Enterprise MCP Integration and Security Operations Platform
+
+# Core async and HTTP
+asyncio>=3.4.3
+aiohttp>=3.8.5
+aiofiles>=23.2.1
+
+# AWS SDK and tools
+boto3>=1.28.0
+botocore>=1.31.0
+
+# HTTP clients
+requests>=2.31.0
+httpx>=0.24.1
+
+# Data handling
+pydantic>=2.4.0
+pydantic-settings>=2.0.3
+
+# JSON and YAML
+pyyaml>=6.0.1
+jsonschema>=4.19.0
+
+# Crypto and security
+cryptography>=41.0.0
+python-jose[cryptography]>=3.3.0
+
+# Environment and configuration
+python-dotenv>=1.0.0
+environs>=9.5.0
+
+# Logging and monitoring
+structlog>=23.1.0
+
+# Testing (development)
+pytest>=7.4.0
+pytest-asyncio>=0.21.1
+pytest-cov>=4.1.0
+
+# Date and time
+python-dateutil>=2.8.2
+
+# Type hints
+typing-extensions>=4.7.1
